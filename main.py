@@ -1,11 +1,10 @@
 import os
 from typing import TypedDict, Union
-import secrets
-from lib import routes
-from threading import Thread
+import requests
+from polling import poll
 
 # GitHub OAuth application information
-CLIENT_ID = "25b12301715160d278b8"
+CLIENT_ID = "7579f4898d37ace4fe68"
 SCOPES = ["repo", "read:user"]
 
 
@@ -14,9 +13,9 @@ class Credentials(TypedDict):
     password: str
 
 
-class User:
+class AuthorizedUser:
     def __init__(self):
-        self.authorize()
+        self.authorize(self)
 
     @staticmethod
     def _cache_user(self) -> Union[None, bool]:
@@ -27,26 +26,36 @@ class User:
         except FileExistsError:
             return False
 
+    def __poll_device(self, device_code, interval: int):
+        request_url = f"https://github.com/login/oauth/access_token?client_id={CLIENT_ID}&device_code={device_code}&grant_type=urn:ietf:params:oauth:grant-type:device_code"
+        request_headers = {"Accept": "application/json"}
+
+        res = poll(lambda: "access_token" in requests.post(request_url, headers=request_headers).json(),
+                    step=interval, timeout=9000)
+
+        if(res):
+            print(requests.post(request_url, headers=request_headers).json())
+            return requests.post(request_url, headers=request_headers).json()["access_token"]
+
     @staticmethod
-    def authorize():
-        kwargs = {'host': '127.0.0.1', 'port': 8000, 'threaded': True, 'use_reloader': False, 'debug': False}
-        flask_thread = Thread(target=routes.app.run, daemon=True, kwargs=kwargs).start()
-
+    def authorize(self):
         scope = "%20".join(SCOPES)
-        redirect_uri = "http://localhost:8000/cb"
-        state = secrets.token_hex(16)
-        auth_link = f"https://github.com/login/oauth/authorize?client_id={CLIENT_ID}&scope={scope}\
-        &state={state}&redirect_uri={redirect_uri}&allow_signup=false"
-        print(f"Please, log into your github account using {auth_link} link")
+        response = requests.post(f"https://github.com/login/device/code?client_id={CLIENT_ID}&scope={scope}",
+        headers={"Accept": "application/json"})
 
+        user_code = response.json()["user_code"]
+        device_code = response.json()["device_code"]
+        interval = response.json()["interval"]
 
-    def get_props(self):
-        pass
+        print(f"Please, open https://github.com/login/device and enter the code '{user_code}'")
 
+        authorized = self.__poll_device(device_code, interval)
+        if authorized:
+            print(authorized)
 
 def init_app():
     print('Welcome to the GitHub profile checker!\n')
-    user = User()
+    user = AuthorizedUser()
 
 
 init_app()

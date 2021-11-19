@@ -1,6 +1,7 @@
 from flask import Flask, request
 import logging
 import click
+import requests
 
 
 log = logging.getLogger('werkzeug')
@@ -31,6 +32,8 @@ def authorize():
     if request.args.get("error"):
         return "<h1>Authorization failed!</h1>"
 
-    access_token = request.args.get("")
+    code = request.args.get("code")
+    access_token = request.get("https://github.com/login/oauth/access_token")
+
     return "<h1>Authorization completed successfully!</h1><p>You may now close this tab.</p>"
 
