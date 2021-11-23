@@ -7,10 +7,51 @@ from main import get_authorized_profile
 def analyze(repos):
     # GitHub repos without org repos or forks
     personal_repos = list(filter(lambda x: not x["fork"] and x["owner"]["type"] == "User", repos))
+    org_repos = list(filter(lambda x: not x["fork"] and x["owner"]["type"] == "Organization", repos))
+
     similar = similar_repos_in_arr(personal_repos)
     print(similar)
     for repo in personal_repos:
-        analyze_unit(repo)
+        summary = analyze_unit(repo)
+        print(summary)
+
+    analyze_from_orgs(org_repos)
+
+
+def find_index(criteria, arr):
+    for i in range(0, len(arr)):
+        if criteria(arr[i]):
+            return i
+
+    return None
+
+
+def analyze_from_orgs(org_repos):
+    orgs = []
+
+    for i in range(0, len(org_repos)):
+        org_repo_names = []
+
+        for j in range(0, len(orgs)):
+            org_repo_names.append(orgs[j]["name"])
+
+        if org_repos[i]["owner"]["login"] not in org_repo_names:
+            orgs.append({"name": org_repos[i]["owner"]["login"], "repos": []})
+
+        for j in range(0, len(orgs)):
+            if org_repos[i]["name"] not in orgs[j]["repos"] and org_repos[i]["owner"]["login"] == orgs[j]["name"]:
+                orgs[j]["repos"].append({"name": org_repos[i]["name"], "id": i})
+
+    for org in orgs:
+        similar = similar_repos_in_arr(org["repos"])
+
+        for repo in org["repos"]:
+            repo = org_repos[find_index(lambda x: x["name"] == repo["name"], org_repos)]
+            print(analyze_unit(repo))
+
+
+def camel_case_split(identifier):
+    return re.sub('([A-Z][a-z]+)', r' \1', re.sub('([A-Z]+)', r' \1', identifier)).split()
 
 
 def analyze_unit(repo):
@@ -18,7 +59,23 @@ def analyze_unit(repo):
     # checking for readmes
     filenames = get_repo_filenames(repo)
     summary["readme_present"] = "readme.md" in filenames
+
+    # other trivial stuff
+    summary["license"] = bool(repo["license"])
+    summary["description"] = bool(repo["description"])
+    summary["homepage"] = bool(repo["homepage"])
     summary["empty"] = not bool(len(filenames))
+
+    # checking for repo naming convention
+    camel_case_detected = len(camel_case_split(repo["name"])) > 1
+    other_symbols_detected = len(re.split("_| | ", repo["name"])) > 1
+
+    summary["naming"] = {
+        "camelcase": camel_case_detected,
+        "other": other_symbols_detected
+    }
+
+    return summary
 
 
 def get_repo_filenames(repo):
@@ -31,10 +88,6 @@ def get_repo_filenames(repo):
                          headers=headers).json()
 
     return [] if "message" in files else list(map(lambda file: file["name"].lower(), files))
-
-
-def camel_case_split(identifier):
-    return re.sub('([A-Z][a-z]+)', r' \1', re.sub('([A-Z]+)', r' \1', identifier)).split()
 
 
 def get_keywords_from_repo_name(repo_name):
@@ -60,6 +113,9 @@ def get_all_similar_repos(similar):
 
 
 def similar_repos_in_arr(repos):
+    if len(repos) < 2:
+        return []
+
     similar_repos = []
     for repo in repos:
         if repo["name"] in get_all_similar_repos(similar_repos):
