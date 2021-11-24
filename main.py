@@ -91,7 +91,6 @@ def remove(name, wipe):
         file.write(json.dumps(contents))
 
 
-
 def load_data():
     if not os.path.exists("./data/profiles.json"):
         raise FileNotFoundError("File does not exist!")
@@ -108,28 +107,6 @@ def get_authorized_profile():
 def get_saved_profiles():
     contents = load_data()
     return contents["profiles"]
-
-
-class Repositories:
-    def __init__(self, username):
-        self.username = username
-
-    def fetch_repos(self, headers):
-        username = self.username
-        repositories = requests.get(f"https://api.github.com/users/{username}/repos", headers=headers).json()
-        # print(repositories)
-
-
-class Summary:
-    def __init__(self, profile):
-        self.profile = profile
-
-    def generate(self):
-        profile = self.profile
-        repositories = Repositories("rolandsfr")
-        headers = {"Authorization": "token " + profile['reference']} if profile['isAuthorized'] else {}
-        # print(headers)
-        repositories.fetch_repos(headers)
 
 
 def clear():
@@ -158,7 +135,6 @@ def authorize():
     response = requests.post(f"https://github.com/login/device/code?client_id={CLIENT_ID}&scope={scope}",
                              headers={"Accept": "application/json"})
 
-    print(response.json())
     user_code = response.json()["user_code"]
     device_code = response.json()["device_code"]
     interval = response.json()["interval"]
@@ -190,7 +166,7 @@ def analyze(name, fromlist):
         else:
             token = get_authorized_profile()["token"]
             repos = requests.get("https://api.github.com/user/repos", headers={"Authorization": f"token {token}"}).json()
-            reposAnalyzer.analyze(repos)
+            repos_summary = reposAnalyzer.analyze(repos)
 
     else:
 
