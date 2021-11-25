@@ -5,31 +5,36 @@ import re
 import requests
 
 # local modules
-from main import get_authorized_profile
+from utils.fs_manip import get_authorized_profile
+from utils.data_structute_manip import find_index
 
 
-def analyze(repos):
-    # GitHub repos without org repos or forks
-    personal_repos = list(filter(lambda x: not x["fork"] and x["owner"]["type"] == "User", repos))
-    org_repos = list(filter(lambda x: not x["fork"] and x["owner"]["type"] == "Organization", repos))
-
+def analyze_repos(repos):
     # handle repos that are not part of any organizations
+    org_repos = list(filter(lambda x: not x["fork"] and x["owner"]["type"] == "Organization", repos))
+    org_repo_names = list(map(lambda repo: repo["name"], org_repos))
+
+    # GitHub repos without org repos or forks
+    personal_repos = list(filter(lambda x: not x["fork"] and x["owner"]["type"] == "User" and x["name"] not in org_repo_names, repos))
+
     similar = similar_repos_in_arr(personal_repos)
-    plain_summaries = [analyze_unit(unit) for unit in personal_repos]
-    plain_summaries = {"summaries": plain_summaries, "similar": similar}
+    plain_summaries = []
+
+    for repo_entry in personal_repos:
+        summary = analyze_unit(repo_entry)
+        target_similarity = find_index(lambda target_repo: target_repo["name"] == repo_entry["name"], similar)
+
+        if target_similarity:
+            summary["similar"] = similar[target_similarity]["similar_repos"] if len(similar) else []
+        else:
+            summary["similar"] = []
+
+        plain_summaries.append(summary)
 
     # handle repos that are part of an organization
     org_repos_summaries: [] = analyze_from_orgs(org_repos)
 
     return {"plain": plain_summaries, "with_orgs": org_repos_summaries}
-
-
-def find_index(criteria, arr):
-    for i in range(0, len(arr)):
-        if criteria(arr[i]):
-            return i
-
-    return None
 
 
 def analyze_from_orgs(org_repos):
@@ -77,7 +82,7 @@ def analyze_unit(repo, org=None):
     summary["license"] = bool(repo["license"])
     summary["description"] = bool(repo["description"])
     summary["homepage"] = bool(repo["homepage"])
-    summary["empty"] = not bool(len(filenames))
+    summary["is_empty"] = not bool(len(filenames))
     if org:
         summary["organization"] = org
 
@@ -87,7 +92,7 @@ def analyze_unit(repo, org=None):
 
     summary["naming"] = {
         "camelcase": camel_case_detected,
-        "other": other_symbols_detected
+        "other_unsupported": other_symbols_detected
     }
 
     return summary
@@ -153,7 +158,6 @@ def similar_repos_in_arr(repos):
                     target_object["similar_repos"].append(current_listed_repo["name"])
                     for k in range(0, len(similar_repos)):
                         if similar_repos[k]["name"] == current_listed_repo["name"]:
-                            # similar_repos[k]["similar_repos"].append(current_listed_repo["name"])
                             similar_repos[k]["similar_repos"] = list(set(similar_repos[k]["similar_repos"]))
 
         for l in range(0, len(similar_repos)):

@@ -1,7 +1,6 @@
 # Standard libs
 import json
 import os
-from typing import TypedDict
 from click import group, echo, argument, option
 
 # 3rd party libs
@@ -9,7 +8,10 @@ import requests
 from polling import poll
 
 # Local modules
-from lib import reposAnalyzer
+from analyzers.repos_analyzer import analyze_repos
+from analyzers.account_analyzer import map_profile_vitals
+from utils.fs_manip import load_data, get_authorized_profile
+from savers.csv_saver import save_to_scv
 
 # GitHub OAuth application information
 CLIENT_ID = "7579f4898d37ace4fe68"
@@ -91,19 +93,6 @@ def remove(name, wipe):
         file.write(json.dumps(contents))
 
 
-def load_data():
-    if not os.path.exists("./data/profiles.json"):
-        raise FileNotFoundError("File does not exist!")
-
-    with open("data/profiles.json", "r") as file:
-        return json.load(file)
-
-
-def get_authorized_profile():
-    contents = load_data()
-    return contents["authorized"]
-
-
 def get_saved_profiles():
     contents = load_data()
     return contents["profiles"]
@@ -158,18 +147,33 @@ def authorize():
 @cli.command()
 @argument("name", required=False)
 @option("--fromlist", "--fl", is_flag=True)
-def analyze(name, fromlist):
+@option("--csv", is_flag=True)
+def analyze(name, fromlist, csv):
     if not fromlist:
         if name in get_saved_profiles():
             repos = requests.get(f"https://api.github.com/users/{name}/repos").json()
-            reposAnalyzer.analyze(repos)
+            repos_summary = analyze_repos(repos)
+
+            user_profile = requests.get(f"https://api.github.com/users/{name}").json()
+            account_summary = map_profile_vitals(user_profile, repos)
+            summary = {**repos_summary, "profile": account_summary}
+
+            if csv:
+                save_to_scv(summary, name)
         else:
             token = get_authorized_profile()["token"]
+            authorized_user_name = get_authorized_profile()["name"]
             repos = requests.get("https://api.github.com/user/repos", headers={"Authorization": f"token {token}"}).json()
-            repos_summary = reposAnalyzer.analyze(repos)
+            repos_summary = analyze_repos(repos)
+
+            user_profile = requests.get("https://api.github.com/user", headers={"Authorization": f"token {token}"}).json()
+            account_summary = map_profile_vitals(user_profile, repos)
+            summary = {**repos_summary, "profile": account_summary}
+
+            if csv:
+                save_to_scv(summary, authorized_user_name)
 
     else:
-
         pass
 
 
