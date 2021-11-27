@@ -1,32 +1,14 @@
+# standard libs
 import csv
 
+# local modules
 from utils.data_structute_manip import find_index
+from savers.common import head_columns
 
 
 def save_to_scv(merged_summary, profile_name):
     with open(f"data/summary_{profile_name}.csv", "w") as csv_file:
         csv_writer = csv.writer(csv_file, delimiter=",")
-
-        # determine columns
-        common_fields = [
-            {"name": "Repository name", "associated": "repo_name"},
-            {"name": "Readme", "associated": "readme_present"},
-            {"name": "License", "associated": "license"},
-            {"name": "Description", "associated": "description"},
-            {"name": "Homepage", "associated": "homepage"},
-            {"name": "Non-empty repository", "associated": "is_empty"},
-            {"name": "Standard naming convention", "associated": "naming"},
-            {"name": "Similar repositories", "associated": "similar"}
-        ]
-
-        head_columns = [
-            {"name": "plain", "columns": common_fields},
-            {"name": "with_orgs", "columns": [*common_fields, {"name": "Organization", "associated": "organization"}]},
-            {"name": "profile", "columns": [
-                "Criteria",
-                "Presence"
-            ]}
-        ]
 
         for summary_type in merged_summary.keys():
             target_index = find_index(lambda target_type: target_type["name"] == summary_type, head_columns)

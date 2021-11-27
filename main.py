@@ -12,6 +12,8 @@ from analyzers.repos_analyzer import analyze_repos
 from analyzers.account_analyzer import map_profile_vitals
 from utils.fs_manip import load_data, get_authorized_profile
 from savers.csv_saver import save_to_scv
+from savers.md_saver import save_to_md
+from lib import exceptions
 
 # GitHub OAuth application information
 CLIENT_ID = "7579f4898d37ace4fe68"
@@ -54,7 +56,7 @@ def write_profile(name: str, authorized: str = ""):
 
 @group()
 def cli():
-    pass
+    create_data_dir()
 
 
 @cli.group()
@@ -144,39 +146,72 @@ def authorize():
         echo("An error occurred during authorization. Please, try again.")
 
 
+def generate_summary_for_unauthorized(name, csv: bool):
+    repos = requests.get(f"https://api.github.com/users/{name}/repos").json()
+    if "message" in repos.keys() and repos["documentation_url"] == "https://docs.github.com/rest/overview/resources-in-the-rest-api#rate-limiting":
+
+        raise exceptions.RateLimitError("You have been rate limited. Wait out an hour or use the `gpc analyze` "
+                                        "for an authorized user ")
+
+    repos_summary = analyze_repos(repos)
+
+    user_profile = requests.get(f"https://api.github.com/users/{name}").json()
+    account_summary = map_profile_vitals(user_profile, repos)
+    summary = {**repos_summary, "profile": account_summary}
+    save = save_to_scv if csv else save_to_md
+    save(summary, name)
+
+
 @cli.command()
 @argument("name", required=False)
 @option("--fromlist", "--fl", is_flag=True)
 @option("--csv", is_flag=True)
 def analyze(name, fromlist, csv):
     if not fromlist:
-        if name in get_saved_profiles():
-            repos = requests.get(f"https://api.github.com/users/{name}/repos").json()
-            repos_summary = analyze_repos(repos)
+        saved_profiles = get_saved_profiles()
 
-            user_profile = requests.get(f"https://api.github.com/users/{name}").json()
-            account_summary = map_profile_vitals(user_profile, repos)
-            summary = {**repos_summary, "profile": account_summary}
+        if name:
+            if name not in saved_profiles:
+                write_profile(name)
 
-            if csv:
-                save_to_scv(summary, name)
+            try:
+                generate_summary_for_unauthorized(name, csv)
+            except exceptions.RateLimitError as e:
+                echo(str(e))
+
         else:
-            token = get_authorized_profile()["token"]
-            authorized_user_name = get_authorized_profile()["name"]
+            authorized_profile = get_authorized_profile()
+            if not authorized_profile["name"]:
+                echo("Please, login first using `gpc login`")
+                return
+
+            token = authorized_profile["token"]
+            name = authorized_profile["name"]
+
             repos = requests.get("https://api.github.com/user/repos", headers={"Authorization": f"token {token}"}).json()
             repos_summary = analyze_repos(repos)
 
             user_profile = requests.get("https://api.github.com/user", headers={"Authorization": f"token {token}"}).json()
             account_summary = map_profile_vitals(user_profile, repos)
             summary = {**repos_summary, "profile": account_summary}
-
-            if csv:
-                save_to_scv(summary, authorized_user_name)
-
+            save = save_to_scv if csv else save_to_md
+            save(summary, name)
     else:
-        pass
+        data = load_data()
+        all_profiles = data["profiles"]
+        if not len(all_profiles):
+            echo(
+                "You do not have any profiles saved. Run 'gpc analyze', 'gpc analyze <profilename>' or 'gpc profile"
+                "add <profilename> to use the --fromlist flag'")
+            return
+
+        for profile_name in all_profiles:
+            try:
+                generate_summary_for_unauthorized(profile_name, csv)
+            except exceptions.RateLimitError as e:
+                echo(str(e))
+                return
 
 
 if __name__ == "__main__":
-    create_data_dir()
     cli()

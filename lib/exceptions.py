@@ -3,6 +3,6 @@ class Error(Exception):
     pass
 
 
-class AuthorizationError(Error):
-    """Raised when cli fails to authorize the user through the GitHub OAuth"""
+class RateLimitError(Error):
+    """Raise when the requests are aborted because of the rate limit"""
     pass

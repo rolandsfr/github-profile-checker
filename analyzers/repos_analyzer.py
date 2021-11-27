@@ -88,7 +88,7 @@ def analyze_unit(repo, org=None):
 
     # checking for repo naming convention
     camel_case_detected = len(camel_case_split(repo["name"])) > 1
-    other_symbols_detected = len(re.split("_| | ", repo["name"])) > 1
+    other_symbols_detected = len(re.split("_| ", repo["name"])) > 1
 
     summary["naming"] = {
         "camelcase": camel_case_detected,
@@ -111,7 +111,7 @@ def get_repo_filenames(repo):
 
 
 def get_keywords_from_repo_name(repo_name):
-    keywords = re.split("- |_ |-", repo_name)
+    keywords = re.split("-|_ | ", repo_name)
     camel_case_separated = camel_case_split(repo_name)
     if len(camel_case_separated) > 1:
         keywords = [*keywords, *camel_case_separated]
