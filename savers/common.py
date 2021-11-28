@@ -6,14 +6,17 @@ common_fields = [
     {"name": "Homepage", "associated": "homepage"},
     {"name": "Non-empty repository", "associated": "is_empty"},
     {"name": "Standard naming convention", "associated": "naming"},
-    {"name": "Similar repositories", "associated": "similar"}
+    {"name": "Similar repositories", "associated": "similar"},
 ]
 
 head_columns = [
     {"name": "plain", "columns": common_fields},
-    {"name": "with_orgs", "columns": [*common_fields, {"name": "Organization", "associated": "organization"}]},
-    {"name": "profile", "columns": [
-        "Criteria",
-        "Present"
-    ]}
+    {
+        "name": "with_orgs",
+        "columns": [
+            *common_fields,
+            {"name": "Organization", "associated": "organization"},
+        ],
+    },
+    {"name": "profile", "columns": ["Criteria", "Present"]},
 ]

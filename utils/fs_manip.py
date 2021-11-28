@@ -13,3 +13,8 @@ def load_data():
 def get_authorized_profile():
     contents = load_data()
     return contents["authorized"]
+
+
+def get_saved_profiles():
+    contents = load_data()
+    return contents["profiles"]

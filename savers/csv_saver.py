@@ -11,13 +11,17 @@ def save_to_scv(merged_summary, profile_name):
         csv_writer = csv.writer(csv_file, delimiter=",")
 
         for summary_type in merged_summary.keys():
-            target_index = find_index(lambda target_type: target_type["name"] == summary_type, head_columns)
+            target_index = find_index(
+                lambda target_type: target_type["name"] == summary_type, head_columns
+            )
 
             if summary_type == "with_orgs" and not len(merged_summary["with_orgs"]):
                 continue
 
             if not summary_type == "profile":
-                cols = list(map(lambda col: col["name"], head_columns[target_index]["columns"]))
+                cols = list(
+                    map(lambda col: col["name"], head_columns[target_index]["columns"])
+                )
                 csv_writer.writerow(cols)
 
                 for entry in merged_summary[summary_type]:
@@ -29,7 +33,10 @@ def save_to_scv(merged_summary, profile_name):
                         if summary_unit["associated"] == "is_empty":
                             value = not value
                         elif summary_unit["associated"] == "naming":
-                            if not value["camelcase"] and not value["other_unsupported"]:
+                            if (
+                                not value["camelcase"]
+                                and not value["other_unsupported"]
+                            ):
                                 value = True
                             else:
                                 value = False
