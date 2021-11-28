@@ -5,7 +5,7 @@ CLI utility written in Python for detecting weak spots in GitHub profiles
 Since the CLI is written in Python you will have to first install python itself
 and then run
 ```bash
-python -m pip install gpc-cli
+pip install gpc-cli
 ```
 After the installation you should have a ``gpc`` namespace available in your currently running user.
 
