@@ -2,16 +2,17 @@
 import io
 
 # 3rd party libs
-from savers.common import head_columns
 from pytablewriter import MarkdownTableWriter
 from utils.data_structute_manip import find_index
 
 # Local modules
 from utils.constants import HOME_DIR
+from savers.common import head_columns, get_suggestion
 
 
 def save_to_md(merged_summary, profile_name):
     with open(f"{HOME_DIR}/gpc-data/summary_{profile_name}.md", "w") as file:
+        issues = {}
 
         for summary_type in merged_summary.keys():
             value_matrix = []
@@ -51,20 +52,35 @@ def save_to_md(merged_summary, profile_name):
 
                         if unit == "is_empty":
                             value = not value
+
                         elif unit == "naming":
                             value = (
                                 not value["camelcase"]
                                 and not value["other_unsupported"]
                             )
-                        elif unit == "similar":
+
+                        if type(value) is bool and not unit == "organization":
+                            if not value:
+                                if unit in issues.keys():
+                                    issues[unit] += 1
+                                else:
+                                    issues[unit] = 1
+
+                            value = "Yes" if value else "<mark>No</mark>"
+
+                        elif isinstance(value, list):
+                            if len(value):
+                                if unit in issues.keys():
+                                    issues[unit] += 1
+                                else:
+                                    issues[unit] = 1
+
+                        if unit == "similar":
                             value = (
                                 "<mark>" + ", ".join(value) + "</mark>"
                                 if len(value)
                                 else str(None)
                             )
-
-                        if type(value) is bool:
-                            value = "Yes" if value else "<mark>No</mark>"
 
                         values_row.append(value)
 
@@ -89,3 +105,14 @@ def save_to_md(merged_summary, profile_name):
             writer.write_table()
             writer.stream = file
             writer.write_table()
+
+        if not len(list(issues.keys())):
+            return
+
+        # Offering suggestions
+        file.write("## Suggestions\n")
+        file.write("### Here are the issues that have been detected in the profile and how to fix them.\n\n")
+
+        # Covering every issue in detail
+        for issue in issues.keys():
+            file.write(get_suggestion(issue, issues[issue]) + "\n\n")

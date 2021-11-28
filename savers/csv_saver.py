@@ -53,7 +53,7 @@ def save_to_scv(merged_summary, profile_name):
                 csv_writer.writerow(cols)
 
                 for profile_entry in merged_summary["profile"].keys():
-                    row = [profile_entry, merged_summary["profile"][profile_entry]]
+                    row = [profile_entry.replace("_", " "), merged_summary["profile"][profile_entry]]
                     csv_writer.writerow(row)
 
             csv_writer.writerow([])
