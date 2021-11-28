@@ -6,9 +6,12 @@ from savers.common import head_columns
 from pytablewriter import MarkdownTableWriter
 from utils.data_structute_manip import find_index
 
+# Local modules
+from utils.constants import HOME_DIR
+
 
 def save_to_md(merged_summary, profile_name):
-    with open(f"data/summary_{profile_name}.md", "w") as file:
+    with open(f"{HOME_DIR}/gpc-data/summary_{profile_name}.md", "w") as file:
 
         for summary_type in merged_summary.keys():
             value_matrix = []

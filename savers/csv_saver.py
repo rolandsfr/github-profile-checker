@@ -4,10 +4,11 @@ import csv
 # local modules
 from utils.data_structute_manip import find_index
 from savers.common import head_columns
+from utils.constants import HOME_DIR
 
 
 def save_to_scv(merged_summary, profile_name):
-    with open(f"data/summary_{profile_name}.csv", "w") as csv_file:
+    with open(f"{HOME_DIR}/gpc-data/summary_{profile_name}.csv", "w") as csv_file:
         csv_writer = csv.writer(csv_file, delimiter=",")
 
         for summary_type in merged_summary.keys():

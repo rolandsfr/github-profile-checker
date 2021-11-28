@@ -1,9 +1,9 @@
 # Standard libs
 import json
 import os
-from time import sleep
 
 # 3rd party libs
+import polling
 import requests
 from polling import poll
 from click import group, echo, argument, option
@@ -11,50 +11,26 @@ from click import group, echo, argument, option
 # Local modules
 from analyzers.repos_analyzer import analyze_repos
 from analyzers.account_analyzer import map_profile_vitals
-from utils.fs_manip import load_data, get_authorized_profile, get_saved_profiles
+from utils.fs_manip import (
+    load_data,
+    get_authorized_profile,
+    get_saved_profiles,
+    write_profile,
+    create_data_dir,
+)
 from savers.csv_saver import save_to_scv
 from savers.md_saver import save_to_md
-import exceptions
+from utils.constants import HOME_DIR
 
 # GitHub OAuth application information
 CLIENT_ID = "7579f4898d37ace4fe68"
 SCOPES = ["repo", "read:user", "admin:org"]
 
 
-def create_data_dir():
-    if not os.path.exists("./data/profiles.json"):
-        os.mkdir("data")
-        file = open("data/profiles.json", "w")
-        json.dump({"profiles": [], "authorized": {"name": None, "token": None}}, file)
-        file.close()
-
-
 def is_valid_profile(username):
     return (
         "message" not in requests.get(f"https://api.github.com/users/{username}").json()
     )
-
-
-def write_profile(name: str, authorized: str = ""):
-    file = open("data/profiles.json", "r+")
-    contents = json.load(file)
-
-    if not authorized:
-        authorized_profile = contents["authorized"]
-        if not name == authorized_profile["name"]:
-            contents["profiles"].append(name)
-            profiles_list = list(dict.fromkeys(contents["profiles"]))
-            contents["profiles"] = profiles_list
-    else:
-        if name in contents["profiles"]:
-            contents["profiles"].remove(name)
-
-        contents["authorized"]["name"] = name
-        contents["authorized"]["token"] = authorized
-
-    file.seek(0)
-    file.write(json.dumps(contents))
-    file.close()
 
 
 def generate_summary_for_unauthorized(name, csv: bool, verbose: bool):
@@ -65,7 +41,7 @@ def generate_summary_for_unauthorized(name, csv: bool, verbose: bool):
         and repos["documentation_url"]
         == "https://docs.github.com/rest/overview/resources-in-the-rest-api#rate-limiting"
     ):
-        raise exceptions.main.RateLimitError(
+        raise ValueError(
             "You have been rate limited. Wait out an hour or use the `gpc analyze` "
             "for an authorized user "
         )
@@ -86,7 +62,7 @@ def generate_summary_for_unauthorized(name, csv: bool, verbose: bool):
     if verbose:
         extension = ".csv" if csv else ".md"
         file_name = f"summary_{name}{extension}"
-        echo(f"  - Saving the summary to {file_name}")
+        echo(f"  - Saving the summary to {HOME_DIR}/gpc-data/{file_name}")
 
     save = save_to_scv if csv else save_to_md
     save(summary, name)
@@ -144,7 +120,7 @@ def remove(name, wipe):
     # TODO: Create visual selection for this
     """Removes a profile from local 'saved' list"""
     profiles = get_saved_profiles()
-    with open("./data/profiles.json", "r+") as file:
+    with open(f"{HOME_DIR}/gpc-data/profiles.json", "r+") as file:
         contents = json.load(file)
         if name and name in profiles and not wipe:
             contents["profiles"].remove(name)
@@ -154,7 +130,7 @@ def remove(name, wipe):
             if not profiles_length:
                 echo("There are no profiles to remove.")
             else:
-                echo(f"{profiles_length} profiles have been removed")
+                echo(f"{profiles_length} profiles have been removed.")
             contents["profiles"] = []
 
         else:
@@ -164,6 +140,19 @@ def remove(name, wipe):
         file.truncate(0)
         file.seek(0)
         file.write(json.dumps(contents))
+
+
+@profile.command("listall")
+def list_all():
+    """List all currently saved GitHub profiles"""
+    saved_profiles = get_saved_profiles()
+    if not len(saved_profiles):
+        echo("You currently have no saved profiles.")
+        return
+
+    echo("You have the following profiles saved:")
+    for profile_name in saved_profiles:
+        echo(f"  - {profile_name}")
 
 
 @cli.command("login")
@@ -197,6 +186,8 @@ def authorize():
 
     except AssertionError:
         echo("An error occurred during authorization. Please, try again.")
+    except polling.TimeoutException:
+        echo("Your device code has expired. Generate another one using `gpc login`.")
 
 
 @cli.command()
@@ -219,7 +210,7 @@ def analyze(name, fromlist, csv):
 
             try:
                 generate_summary_for_unauthorized(name, csv, True)
-            except exceptions.main.RateLimitError as e:
+            except Exception as e:
                 echo(str(e))
 
         else:
@@ -231,13 +222,24 @@ def analyze(name, fromlist, csv):
             token = authorized_profile["token"]
             name = authorized_profile["name"]
 
-            echo(f"Analyzing GitHub profile for {name}")
-
-            echo("  - Starting to fetch...")
             repos = requests.get(
                 "https://api.github.com/user/repos",
                 headers={"Authorization": f"token {token}"},
             ).json()
+
+            if (
+                not isinstance(repos, list)
+                and "message" in repos.keys()
+                and repos["message"] == "Bad credentials"
+            ):
+                echo(
+                    "Your access token is not valid. Please login again using `gpc login`"
+                )
+                return
+
+            echo(f"Analyzing GitHub profile for {name}")
+            echo("  - Starting to fetch...")
+
             repos_summary = analyze_repos(repos, True)
 
             echo("\t - Checking for missing credentials")
@@ -250,7 +252,7 @@ def analyze(name, fromlist, csv):
 
             extension = ".csv" if csv else ".md"
             file_name = f"summary_{name}{extension}"
-            echo(f"  - Saving the summary to {file_name}")
+            echo(f"  - Saving the summary to {HOME_DIR}/gpc-data/{file_name}")
 
             save = save_to_scv if csv else save_to_md
             save(summary, name)
@@ -285,7 +287,7 @@ def analyze(name, fromlist, csv):
             try:
                 generate_summary_for_unauthorized(profile_name, csv, False)
                 print("")
-            except exceptions.main.RateLimitError as e:
+            except Exception as e:
                 echo(str(e))
                 return
 
