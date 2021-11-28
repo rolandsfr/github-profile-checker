@@ -2,3 +2,4 @@ venv
 .idea
 github_profile_checker.egg-info
 __pycache__
+gpc_cli.egg-info
