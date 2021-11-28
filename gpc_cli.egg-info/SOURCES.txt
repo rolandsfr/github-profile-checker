@@ -1,8 +1,0 @@
-README.md
-setup.py
-gpc_cli.egg-info/PKG-INFO
-gpc_cli.egg-info/SOURCES.txt
-gpc_cli.egg-info/dependency_links.txt
-gpc_cli.egg-info/entry_points.txt
-gpc_cli.egg-info/requires.txt
-gpc_cli.egg-info/top_level.txt
