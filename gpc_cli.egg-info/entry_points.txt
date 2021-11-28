@@ -1,0 +1,3 @@
+[console_scripts]
+gpc = src.__main__:cli
+

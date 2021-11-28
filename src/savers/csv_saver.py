@@ -1,10 +1,11 @@
 # standard libs
 import csv
 
+
 # local modules
-from utils.data_structute_manip import find_index
-from savers.common import head_columns
-from utils.constants import HOME_DIR
+from src.utils.data_structute_manip import find_index
+from src.savers.common import head_columns
+from src.utils.constants import HOME_DIR
 
 
 def save_to_scv(merged_summary, profile_name):
@@ -53,7 +54,10 @@ def save_to_scv(merged_summary, profile_name):
                 csv_writer.writerow(cols)
 
                 for profile_entry in merged_summary["profile"].keys():
-                    row = [profile_entry.replace("_", " "), merged_summary["profile"][profile_entry]]
+                    row = [
+                        profile_entry.replace("_", " "),
+                        merged_summary["profile"][profile_entry],
+                    ]
                     csv_writer.writerow(row)
 
             csv_writer.writerow([])

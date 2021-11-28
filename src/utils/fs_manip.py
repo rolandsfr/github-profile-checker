@@ -2,7 +2,7 @@ import os
 import json
 
 # Local modules
-from utils.constants import HOME_DIR
+from src.utils.constants import HOME_DIR
 
 
 def load_data():

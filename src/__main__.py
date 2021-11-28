@@ -1,6 +1,5 @@
 # Standard libs
 import json
-import os
 
 # 3rd party libs
 import polling
@@ -9,18 +8,18 @@ from polling import poll
 from click import group, echo, argument, option
 
 # Local modules
-from analyzers.repos_analyzer import analyze_repos
-from analyzers.account_analyzer import map_profile_vitals
-from utils.fs_manip import (
+from src.analyzers.repos_analyzer import analyze_repos
+from src.analyzers.account_analyzer import map_profile_vitals
+from src.utils.fs_manip import (
     load_data,
     get_authorized_profile,
     get_saved_profiles,
     write_profile,
     create_data_dir,
 )
-from savers.csv_saver import save_to_scv
-from savers.md_saver import save_to_md
-from utils.constants import HOME_DIR
+from src.savers.csv_saver import save_to_scv
+from src.savers.md_saver import save_to_md
+from src.utils.constants import HOME_DIR
 
 # GitHub OAuth application information
 CLIENT_ID = "7579f4898d37ace4fe68"
@@ -290,7 +289,3 @@ def analyze(name, fromlist, csv):
             except Exception as e:
                 echo(str(e))
                 return
-
-
-if __name__ == "__main__":
-    cli()

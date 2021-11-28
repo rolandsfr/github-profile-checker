@@ -6,8 +6,8 @@ from time import sleep
 import requests
 
 # local modules
-from utils.fs_manip import get_authorized_profile
-from utils.data_structute_manip import find_index
+from src.utils.fs_manip import get_authorized_profile
+from src.utils.data_structute_manip import find_index
 
 
 def analyze_repos(repos, verbose):

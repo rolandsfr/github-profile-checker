@@ -3,11 +3,11 @@ import io
 
 # 3rd party libs
 from pytablewriter import MarkdownTableWriter
-from utils.data_structute_manip import find_index
 
 # Local modules
-from utils.constants import HOME_DIR
-from savers.common import head_columns, get_suggestion
+from src.utils.constants import HOME_DIR
+from src.utils.data_structute_manip import find_index
+from src.savers.common import head_columns, get_suggestion
 
 
 def save_to_md(merged_summary, profile_name):
@@ -111,7 +111,9 @@ def save_to_md(merged_summary, profile_name):
 
         # Offering suggestions
         file.write("## Suggestions\n")
-        file.write("### Here are the issues that have been detected in the profile and how to fix them.\n\n")
+        file.write(
+            "### Here are the issues that have been detected in the profile and how to fix them.\n\n"
+        )
 
         # Covering every issue in detail
         for issue in issues.keys():
