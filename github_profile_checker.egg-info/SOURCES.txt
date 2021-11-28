@@ -1,9 +1,0 @@
-setup.py
-github_profile_checker.egg-info/PKG-INFO
-github_profile_checker.egg-info/SOURCES.txt
-github_profile_checker.egg-info/dependency_links.txt
-github_profile_checker.egg-info/entry_points.txt
-github_profile_checker.egg-info/requires.txt
-github_profile_checker.egg-info/top_level.txt
-lib/__init__.py
-lib/exceptions.py
