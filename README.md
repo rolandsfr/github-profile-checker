@@ -1,4 +1,4 @@
-![](https://i.ibb.co/J38CMzP/New-Project-14.jpg)
+![](https://i.imgur.com/JhZPHV8.jpg)
 
 # GitHub profile checker
 CLI utility written in Python for detecting weak spots in GitHub profiles
