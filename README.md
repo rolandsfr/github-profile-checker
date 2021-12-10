@@ -1,7 +1,14 @@
-![](https://i.imgur.com/JhZPHV8.jpg)
+<h1 align="center">GitHub profile checker</h1>
+<p align="center">CLI utility written in Python for detecting weak spots in GitHub profiles</p>
 
-# GitHub profile checker
-CLI utility written in Python for detecting weak spots in GitHub profiles
+<div align="center">
+    
+  <a href="">![Twitter URL](https://img.shields.io/twitter/url?url=https%3A%2F%2Fgithub.com%2Frolandsfr%2Fgithub-profile-checker)</a>
+  <a href="">![PyPI](https://img.shields.io/pypi/v/gpc-cli)</a>
+    
+ </div>
+ 
+ ![](https://i.imgur.com/JhZPHV8.jpg)
 
 ## Installation
 Since the CLI is written in Python you will have to first install python itself
