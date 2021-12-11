@@ -59,7 +59,7 @@ pleasant process.
 <b>P.S.</b></br>
 the CLI initializer word ``gpc`` is just an abbreviation for
 <b>g</b>ithub-<b>p</b>rofile-<b>c</b>hecker  
-You can also read more about ways to clean your GitGub profile in [this medium article](https://medium.com/@rolyuhh/making-your-github-profile-shine-again-b410e373731b).
+You can also read more about ways to clean your GitHub profile in [this medium article](https://medium.com/@rolyuhh/making-your-github-profile-shine-again-b410e373731b).
 
 ## License
 [MIT](https://opensource.org/licenses/MIT)
